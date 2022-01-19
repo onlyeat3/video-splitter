@@ -1,3 +1,31 @@
+# 说明
+使用map-reduce机制提升转码效率和资源利用率
+按照分割文件 -> 拆分任务到不同机器 -> 合并转码后的分片文件的方式，充分利用集群资源提升转码速度
+栗子：
+原文件input.mxf 需要转码成 output.mp4
+```
+//按60秒一个文件分割
+python video-splitter/ffmpeg-split.py -f input.mxf -s 60
+```
+分片后的文件
+```
+input-1-of-4.mxf
+input-2-of-4.mxf
+input-3-of-4.mxf
+input-4-of-4.mxf
+```
+转码后的文件
+```
+output-1-of-4.mp4
+output-2-of-4.mp4
+output-3-of-4.mp4
+output-4-of-4.mp4
+```
+合并后的文件
+```
+output.mp4
+```
+**注意，因为单机资源限制，拆分成多进程执行不能减少转码耗时**
 # Command Line Video Splitter
 
 Simple command line Python script that splits video into multi chunks. Under the hood script uses [FFMpeg] so you will need to have that installed. No transcoding or modification of video happens, it just get's split properly.
