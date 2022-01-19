@@ -8,6 +8,7 @@ import math
 import os
 import shlex
 import subprocess
+import datetime
 from optparse import OptionParser
 
 
@@ -106,6 +107,8 @@ def split_by_seconds(filename, split_length, vcodec="copy", acodec="copy",
         fileext = filename.split(".")[-1]
     except IndexError as e:
         raise IndexError("No . in filename. Error: " + str(e))
+    
+    task_start_time = datetime.datetime.now()
     for n in range(0, split_count):
         split_args = []
         if n == 0:
@@ -113,12 +116,26 @@ def split_by_seconds(filename, split_length, vcodec="copy", acodec="copy",
         else:
             split_start = split_length * n
 
+        index = str(n + 1)
+        target_file_name = filebase + "-" + index + "-of-" + str(split_count) + "." + fileext
         split_args += ["-ss", str(split_start), "-t", str(split_length),
-                       filebase + "-" + str(n + 1) + "-of-" +
-                       str(split_count) + "." + fileext]
+                       target_file_name]
         print("About to run: " + " ".join(split_cmd + split_args))
         subprocess.check_output(split_cmd + split_args)
+        transcode_cmd = "ffmpeg -i "+target_file_name + " output-"+ index +"-of-"+str(split_count)+".mp4"
 
+        print(transcode_cmd)
+        subprocess.check_output(transcode_cmd)
+        
+    files = []
+    for n in range(1,split_count):
+      files.append("output-{n}-of-{split_count}.mp4".format(n=n,split_count=split_count))
+    
+    files_str = "|".join(files)
+    concat_cmd = "ffmpeg -i \"concat:{files_str}\" -c copy output.mp4".format(files_str=files_str)
+    print(concat_cmd)
+    subprocess.check_output(concat_cmd)
+    print('耗时:'+str((datetime.datetime.now() - task_start_time).seconds))
 
 def main():
     parser = OptionParser()
