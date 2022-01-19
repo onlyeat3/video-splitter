@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
+from  multiprocessing import Process,Pool
 
 import csv
 import json
@@ -87,6 +88,8 @@ def get_video_length(filename):
 def ceildiv(a, b):
     return int(math.ceil(a / float(b)))
 
+def exec_task(task_cmd):
+  subprocess.check_output(task_cmd)
 
 def split_by_seconds(filename, split_length, vcodec="copy", acodec="copy",
                      extra="", video_length=None, **kwargs):
@@ -109,6 +112,8 @@ def split_by_seconds(filename, split_length, vcodec="copy", acodec="copy",
         raise IndexError("No . in filename. Error: " + str(e))
     
     task_start_time = datetime.datetime.now()
+    process_list = []
+    pool = Pool(split_count+1)
     for n in range(0, split_count):
         split_args = []
         if n == 0:
@@ -125,8 +130,11 @@ def split_by_seconds(filename, split_length, vcodec="copy", acodec="copy",
         transcode_cmd = "ffmpeg -i "+target_file_name + " output-"+ index +"-of-"+str(split_count)+".mp4"
 
         print(transcode_cmd)
-        subprocess.check_output(transcode_cmd)
-        
+        pool.apply_async(func=exec_task,args=(transcode_cmd,))
+        # subprocess.check_output(transcode_cmd)
+    
+    pool.close()
+    pool.join()
     files = []
     for n in range(1,split_count):
       files.append("output-{n}-of-{split_count}.mp4".format(n=n,split_count=split_count))
